@@ -6,9 +6,6 @@ let ditto;
 
 // We'll only load Ditto once the DOM is loaded
 document.addEventListener('DOMContentLoaded', async () => {
-  const button = document.getElementById('generateColorButton');
-  const list = document.getElementById('colorList');
-
   // Initialize a new Ditto instance
   // Update the appID & token with your Ditto App specific information found in the Ditto portal
   // For more information see https://docs.ditto.live/get-started/sync-credentials
@@ -18,8 +15,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     appID: "YOUR_APP_ID", // Add your Ditto App ID
     token: "YOUR_PLAYGROUND_TOKEN", // Add your Ditto Playground Token
   });
-  // This is required to ensure correct v3 to v4 migration.
-  await ditto.disableSyncWithV3();
 
   // A sync subscription fetch all the documents in the colors collections devices/cloud
   //
@@ -39,6 +34,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   ditto.store.registerObserver("SELECT * FROM colors", (result) => {
     
     // Clear the list in the DOM and we'll reset them
+    const list = document.getElementById('colorList');
     while (list.firstChild) {
       list.removeChild(list.firstChild);
     }
@@ -48,12 +44,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       const doc = item.value;
       if (!doc.isDeleted) 
         addColorToList(item.value)
-    })
-    console.log(result.items.length)
+    });
+
+    // Log the current document count after re-rendering
+    console.log(`Colors Collection Changed. Current document count: ${result.items.length}`);
   });
 
+  // Get the generate color button and add an event handler for a click action
+  const button = document.getElementById('generateColorButton');
   button.addEventListener('click', () => {
-    // Create a new colors document to be added to the collection
+    // Create a new color document to be added to the colors collection
     const newColorDoc = {
         color: generateRandomColor(),
         isDeleted: false
@@ -69,6 +69,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Render the color value with a delete button in the list
   function addColorToList(colorDoc) {
+    const list = document.getElementById('colorList');
       const listItem = document.createElement('li');
       const colorText = document.createElement('span');
       colorText.style.color = colorDoc.color
