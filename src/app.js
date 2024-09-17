@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Needs called to avoid an error
   ditto.disableSyncWithV3()
 
-  // Initialize with 3000 documents
+  // Initialize with 3000 documents if the store is empty 
   const storeCheck = await ditto.store.execute(`SELECT * FROM colors`);
   if (storeCheck.items.length == 0) {
     // Start a marker called "start-task"
@@ -37,17 +37,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     })
 
     // In this section we'll programmatically generate 3490 other docs
-    // const numOfDocs = 3490
-    // console.log(`inserting ${numOfDocs} docs programmatically`)
-    // for(i = 0; i< numOfDocs; i++) {
-    //   initialDocsInsertPromises.push(
-    //   ditto.store.execute(
-    //     'INSERT INTO colors INITIAL DOCUMENTS (:doc)',
-    //     {doc:{
-    //       color: generateRandomColor(),
-    //       isDeleted: false,
-    //     }}))
-    // }
+    const numOfDocs = 3490
+    console.log(`inserting ${numOfDocs} docs programmatically`)
+    for(i = 0; i< numOfDocs; i++) {
+      initialDocsInsertPromises.push(
+      ditto.store.execute(
+        'INSERT INTO colors INITIAL DOCUMENTS (:doc)',
+        {doc:{
+          color: generateRandomColor(),
+          isDeleted: false,
+        }}))
+    }
 
     // wait for all the new docs to finish
     Promise.all(initialDocsInsertPromises);
@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // The Ditto cloud will automatically pull all data from the device once sync is started
   
   /** Disabling sync to test initial documents */
-  ditto.startSync();
+  // ditto.startSync();
 
   // Register a Ditto store observer that will look for change to the `colors` collection in the local Ditto store
   // Any local or remote changes will trigger this event
