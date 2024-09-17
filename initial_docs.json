@@ -1,0 +1,52 @@
+[
+    {
+        "_id": "8b80fa33-562b-4fd5-a205-96ce0132a568",
+        "color": "#adfd44",
+        "isDeleted": false
+    },
+    {
+        "_id": "5cce37cc-6c4c-4f44-9c74-0b353eedddcf",
+        "color": "#cc2d23",
+        "isDeleted": false
+    },
+    {
+        "_id": "410d02b2-82fc-4a50-ba94-93d79adadbf9",
+        "color": "#c1efab",
+        "isDeleted": false
+    },
+    {
+        "_id": "333ecc0f-0dda-4e78-8130-b5bae5758b7d",
+        "color": "#f01755",
+        "isDeleted": false
+    },
+    {
+        "_id": "14a1b71c-3b6d-437f-8aea-628efc2bfa23",
+        "color": "#b7fce8",
+        "isDeleted": false
+    },
+    {
+        "_id": "f5b4c7fe-e58e-404d-a3aa-52087cbe44f9",
+        "color": "#e834f8",
+        "isDeleted": false
+    },
+    {
+        "_id": "89be1130-af7e-4aa2-ad80-cf4c0449ff81",
+        "color": "#c95e1c",
+        "isDeleted": false
+    },
+    {
+        "_id": "d7fdb264-5790-4185-bc17-25459ee53795",
+        "color": "#8afaed",
+        "isDeleted": false
+    },
+    {
+        "_id": "46ae8ad3-0358-4740-9157-f7ae90d5beac",
+        "color": "#8bd7aa",
+        "isDeleted": false
+    },
+    {
+        "_id": "0117ddb9-2384-4990-b8e8-4c92d19e939b",
+        "color": "#9decad",
+        "isDeleted": false
+    }
+]
