@@ -13,8 +13,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   await init();
   ditto = new Ditto({
     type: "onlinePlayground",
-    appID: "0c8ec5b9-94ea-4ddf-9494-e8c695f18957", // Add your Ditto App ID
-    token: "6bfb822f-30c0-48d5-a575-dee45b85aa64", // Add your Ditto Playground Token
+    appID: "YOUR_APP_ID", // Add your Ditto App ID
+    token: "YOUR_PLAYGROUND_TOKEN", // Add your Ditto Playground Token
   });
 
   // Needs called to avoid an error
