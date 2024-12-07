@@ -1,4 +1,5 @@
 import { Ditto, init } from "@dittolive/ditto";
+import initial_documents from "../initial_docs.json";
 
 // The ditto instance needs to remain in scope of the application to ensure it doesn't get
 // cleaned up.
@@ -16,6 +17,50 @@ document.addEventListener('DOMContentLoaded', async () => {
     token: "YOUR_PLAYGROUND_TOKEN", // Add your Ditto Playground Token
   });
 
+  // Needs called to avoid an error
+  ditto.disableSyncWithV3()
+
+  // Initialize with 3000 documents if the store is empty 
+  const storeCheck = await ditto.store.execute(`SELECT * FROM colors`);
+  if (storeCheck.items.length == 0) {
+    // Start a marker called "start-task"
+    performance.mark('start-insert-initial-docs');
+
+    
+    // There are no documents so we will initialize with the docs from the file
+    console.log("inserting initial documents from file")
+    const initialDocsInsertPromises = [];
+    initial_documents.forEach((doc) => {
+      console.log(doc)
+      initialDocsInsertPromises.push(
+        ditto.store.execute('INSERT INTO colors INITIAL DOCUMENTS (:doc)', { doc }))
+    })
+
+    // In this section we'll programmatically generate 3490 other docs
+    const numOfDocs = 3490
+    console.log(`inserting ${numOfDocs} docs programmatically`)
+    for(i = 0; i< numOfDocs; i++) {
+      initialDocsInsertPromises.push(
+      ditto.store.execute(
+        'INSERT INTO colors INITIAL DOCUMENTS (:doc)',
+        {doc:{
+          color: generateRandomColor(),
+          isDeleted: false,
+        }}))
+    }
+
+    // wait for all the new docs to finish
+    Promise.all(initialDocsInsertPromises);
+    // End the marker called "end-task"
+    performance.mark('end-insert-initial-docs');
+
+    // Measure the time between "start-task" and "end-task"
+    performance.measure('insert-initial-docs-duration', 'start-insert-initial-docs', 'end-insert-initial-docs');
+
+    console.log(performance.getEntriesByName('insert-initial-docs-duration'))
+  }
+
+
   // A sync subscription fetch all the documents in the colors collections devices/cloud
   //
   // New data that is synced from other devices will automatically put into the Ditto store and will trigger a
@@ -26,13 +71,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // This will enable Ditto's automatic data sync operation based on subscriptions
   // The Ditto cloud will automatically pull all data from the device once sync is started
-  ditto.startSync();
+  
+  /** Disabling sync to test initial documents */
+  // ditto.startSync();
 
   // Register a Ditto store observer that will look for change to the `colors` collection in the local Ditto store
   // Any local or remote changes will trigger this event
   // When an event fires we'll re-render the list of colors based on which ones are not deleted
   ditto.store.registerObserver("SELECT * FROM colors", (result) => {
     
+    console.log(result.items.length)
+    console.log(result.items[0].isMaterialized)
+    console.log(result.items)
+
+    result.items.forEach(e => e.materialize())
+    console.log(result.items)
+
     // Clear the list in the DOM and we'll reset them
     const list = document.getElementById('colorList');
     while (list.firstChild) {
