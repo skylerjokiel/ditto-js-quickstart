@@ -1,4 +1,5 @@
 import { Ditto, init } from "@dittolive/ditto";
+import diff from "microdiff";
 
 // The ditto instance needs to remain in scope of the application to ensure it doesn't get
 // cleaned up.
@@ -16,6 +17,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     token: "YOUR_PLAYGROUND_TOKEN", // Add your Ditto Playground Token
   });
 
+  ditto.disableSyncWithV3();
+
   // A sync subscription fetch all the documents in the colors collections devices/cloud
   //
   // New data that is synced from other devices will automatically put into the Ditto store and will trigger a
@@ -30,24 +33,58 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Register a Ditto store observer that will look for change to the `colors` collection in the local Ditto store
   // Any local or remote changes will trigger this event
-  // When an event fires we'll re-render the list of colors based on which ones are not deleted
-  ditto.store.registerObserver("SELECT * FROM colors", (result) => {
+  // When an event fires we'll re-render only the changed items using a differ strategy
+  // This works by storing the previous result then using the microdiff library to compare the previous to the new value
+  let prevResultItems = {};
+  ditto.store.registerObserver("SELECT * FROM colors WHERE isDeleted = false", (result) => {
     
-    // Clear the list in the DOM and we'll reset them
-    const list = document.getElementById('colorList');
-    while (list.firstChild) {
-      list.removeChild(list.firstChild);
-    }
+    const newResultItems = result.items.reduce((acc, item, index) => {
+      acc[item.value._id.toString()] = item.value;
+      return acc;
+    }, {});
+    // We'll start by diffing the current from the previous to see if there are any changes
+    const diffResult = diff(prevResultItems, newResultItems)
+    diffResult.forEach(docDiff => {
+      console.log(JSON.stringify(docDiff));
+      // Remove only items that have changed and we'll re-add them
+      const list = document.getElementById('colorList');
+      // path[0] is set to the document _id which we use as the unique element id
+      const docId = docDiff.path[0];
+      console.log("DOCID:" + docId);
+      switch (docDiff.type) {
+        case 'CREATE':
+          // A document has been added that we've not seen before. Append the item to the bottom of our colors list.
+          // Note: This will happen for all documents on the first load
+          console.log(`New Document: '${docId}' with value '${JSON.stringify(docDiff.value)}'.`);
+          generateColorItemAndAddItToTheList(docDiff.value)
+          break;
+        case 'CHANGE':
+          const fieldName = docDiff.path[1];
+          if (fieldChanged === 'color') {
+            // Get the element changed and update values
+            console.log(`Changed Document: ['${docId}'] with path ['${fieldName}'] from '${docDiff.oldValue}' to '${docDiff.value}'.`);
+            const itemToChange = document.getElementById(docId);
+            itemToChange.style.color = docDiff.value;
+            itemToChange.textContent = docDiff.value;
+          }
+          else {
+            console.log(`unexpected field path changed ${docDiff.path}`);
+          }
+          break;
+        case 'REMOVE':
+          // The delete button already has logic to clean up the element but we'll add a check to make sure it's gone
+          console.log(`Removed Document: '${docId}' which had value '${JSON.stringify(docDiff.oldValue)}'.`);
+          const childItemToRemove = document.getElementById(docId.toString());
+          if (childItemToRemove) {
+            list.removeChild(childItemToRemove);
+          }
+          break
+        default:
+          console.log(`Unknown diff type: ${docDiff.type}`)
+          break;
+    }})
 
-    // For each item in the result set only show the ones not deleted
-    result.items.forEach(item => {
-      const doc = item.value;
-      if (!doc.isDeleted) 
-        addColorToList(item.value)
-    });
-
-    // Log the current document count after re-rendering
-    console.log(`Colors Collection Changed. Current document count: ${result.items.length}`);
+    prevResultItems = newResultItems;
   });
 
   // Get the generate color button and add an event handler for a click action
@@ -68,31 +105,53 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // Render the color value with a delete button in the list
-  function addColorToList(colorDoc) {
-    const list = document.getElementById('colorList');
-      const listItem = document.createElement('li');
-      const colorText = document.createElement('span');
-      colorText.style.color = colorDoc.color
-      colorText.textContent = colorDoc.color;
-      colorText.style.marginRight = '10px';
-      
-      // create a delete button for the color list item
-      const deleteButton = document.createElement('button');
-      deleteButton.textContent = 'Delete';
-      deleteButton.addEventListener('click', () => {
-        // Set the deleted property to true for the id selected
-        ditto.store.execute(`
-          UPDATE colors
-          SET isDeleted = true
-          WHERE _id = :id`, { id: colorDoc._id })  
-        list.removeChild(listItem);
-      });
-
-      listItem.appendChild(colorText);
-      listItem.appendChild(deleteButton);
+  function generateColorItemAndAddItToTheList(colorDoc) {
+      // Remove only items that have changed and we'll re-add them
+      const list = document.getElementById('colorList');
+      const listItem = generateColorItem(colorDoc)
       list.appendChild(listItem);
   }
 });
+
+// Creates a new Color Item
+function generateColorItem(colorDoc) {
+  const list = document.getElementById('colorList');
+  const listItem = document.createElement('li');
+  const colorText = document.createElement('span');
+  colorText.style.color = colorDoc.color;
+  colorText.textContent = colorDoc.color;
+  colorText.style.marginRight = '10px';
+  colorText.setAttribute('id', colorDoc._id);
+  
+  // create a delete button for the color list item
+  const deleteButton = document.createElement('button');
+  deleteButton.textContent = 'Delete';
+  deleteButton.addEventListener('click', () => {
+    // Set the deleted property to true for the id selected
+    ditto.store.execute(`
+      UPDATE colors
+      SET isDeleted = true
+      WHERE _id = :id`, { id: colorDoc._id })  
+    list.removeChild(listItem);
+  });
+
+  // create a delete button for the color list item
+  const changeColorButton = document.createElement('button');
+  changeColorButton.textContent = 'Change Color';
+  changeColorButton.addEventListener('click', () => {
+    // Set the deleted property to true for the id selected
+    const newColor = generateRandomColor();
+    ditto.store.execute(`
+      UPDATE colors
+      SET color = '${newColor}'
+      WHERE _id = :id`, { id: colorDoc._id });
+  });
+
+  listItem.appendChild(colorText);
+  listItem.appendChild(changeColorButton);
+  listItem.appendChild(deleteButton);
+  return listItem;
+}
 
 // Generates a random hex color
 function generateRandomColor() {
