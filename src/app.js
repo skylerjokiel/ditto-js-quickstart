@@ -34,6 +34,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Register a Ditto store observer that will look for change to the `colors` collection in the local Ditto store
   // Any local or remote changes will trigger this event
   // When an event fires we'll re-render only the changed items using a differ strategy
+  // This works by storing the previous result then using the microdiff library to compare the previous to the new value
   let prevResultItems = {};
   ditto.store.registerObserver("SELECT * FROM colors WHERE isDeleted = false", (result) => {
     
@@ -52,36 +53,34 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.log("DOCID:" + docId);
       switch (docDiff.type) {
         case 'CREATE':
+          // A document has been added that we've not seen before. Append the item to the bottom of our colors list.
+          // Note: This will happen for all documents on the first load
           console.log(`New Document: '${docId}' with value '${JSON.stringify(docDiff.value)}'.`);
           generateColorItemAndAddItToTheList(docDiff.value)
           break;
         case 'CHANGE':
-          const pathStr = docDiff.path.slice(1).join('.');
-          console.log(`Changed Document: ['${docId}'] with path ['${pathStr}'] from '${docDiff.oldValue}' to '${docDiff.value}'.`);
-          
-          const itemToChange = document.getElementById(docId);
-          itemToChange.style.color = docDiff.value;
-          itemToChange.textContent = docDiff.value;
-          // // Get the current item 
-          // const childToRemove = document.getElementById(docId);
-          // // Generate the new item
-          // const newListItem = generateColorItem(docDiff.value);
-          // // Insert the new item after
-          // childToRemove.insertBefore(newListItem, childToRemove.nextSibling)
-          // // Remove old item
-          // list.removeChild(childToRemove)
+          const fieldName = docDiff.path[1];
+          if (fieldName === 'color') {
+            // Get the element changed and update values
+            console.log(`Changed Document: ['${docId}'] with path ['${fieldName}'] from '${docDiff.oldValue}' to '${docDiff.value}'.`);
+            const itemToChange = document.getElementById(docId);
+            itemToChange.style.color = docDiff.value;
+            itemToChange.textContent = docDiff.value;
+          }
+          else {
+            console.log(`unexpected field path changed ${docDiff.path}`);
+          }
           break;
         case 'REMOVE':
+          // The delete button already has logic to clean up the element but we'll add a check to make sure it's gone
           console.log(`Removed Document: '${docId}' which had value '${JSON.stringify(docDiff.oldValue)}'.`);
-          // The delete button already cleans up the element but we'll add this check to make sure it's gone
           const childItemToRemove = document.getElementById(docId.toString());
           if (childItemToRemove) {
             list.removeChild(childItemToRemove);
-          } else {
-            console.log("item already deleted");
           }
           break
         default:
+          console.log(`Unknown diff type: ${docDiff.type}`)
           break;
     }})
 
