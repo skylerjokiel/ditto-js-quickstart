@@ -44,6 +44,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // We'll start by diffing the current from the previous to see if there are any changes
     const diffResult = diff(prevResultItems, newResultItems)
     diffResult.forEach(docDiff => {
+      console.log(JSON.stringify(docDiff));
       // Remove only items that have changed and we'll re-add them
       const list = document.getElementById('colorList');
       // path[0] is set to the document _id which we use as the unique element id
@@ -56,7 +57,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           break;
         case 'CHANGE':
           const pathStr = docDiff.path.slice(1).join('.');
-          console.log(`Changed Document: ['${docId}'] with path ['${pathStr}'] from '${docDiff.previous}' to '${docDiff.value}'.`);
+          console.log(`Changed Document: ['${docId}'] with path ['${pathStr}'] from '${docDiff.oldValue}' to '${docDiff.value}'.`);
           
           const itemToChange = document.getElementById(docId);
           itemToChange.style.color = docDiff.value;
@@ -71,7 +72,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           // list.removeChild(childToRemove)
           break;
         case 'REMOVE':
-          console.log(`Removed Document: '${docId}' which had value '${JSON.stringify(docDiff.previous)}'.`);
+          console.log(`Removed Document: '${docId}' which had value '${JSON.stringify(docDiff.oldValue)}'.`);
           // The delete button already cleans up the element but we'll add this check to make sure it's gone
           const childItemToRemove = document.getElementById(docId.toString());
           if (childItemToRemove) {
