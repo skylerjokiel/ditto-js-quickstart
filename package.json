@@ -14,6 +14,7 @@
     "parcel": "^2.12.0"
   },
   "dependencies": {
-    "@dittolive/ditto": "^4.7.1"
+    "@dittolive/ditto": "^4.9.2",
+    "microdiff": "^1.5.0"
   }
 }
