@@ -13,8 +13,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   await init();
   ditto = new Ditto({
     type: "onlinePlayground",
-    appID: "0fab7e5b-3d91-422d-b3e8-4ac6125c3b1e", // Add your Ditto App ID
-    token: "525817b6-274f-43f2-b03e-4f1396030f0c", // Add your Ditto Playground Token
+    appID: "YOUR_APP_ID", // Add your Ditto App ID
+    token: "YOUR_PLAYGROUND_TOKEN", // Add your Ditto Playground Token
   });
 
   ditto.disableSyncWithV3();
@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           break;
         case 'CHANGE':
           const fieldName = docDiff.path[1];
-          if (fieldName === 'color') {
+          if (fieldChanged === 'color') {
             // Get the element changed and update values
             console.log(`Changed Document: ['${docId}'] with path ['${fieldName}'] from '${docDiff.oldValue}' to '${docDiff.value}'.`);
             const itemToChange = document.getElementById(docId);
